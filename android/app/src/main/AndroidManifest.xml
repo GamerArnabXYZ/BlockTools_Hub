@@ -1,10 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.blocktools_hub">
    <application
-        android:label="blocktools_hub"
-        android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
-        <activity
+       android:label="blocktools_hub"
+       android:name="${applicationName}"
+       android:icon="@android:drawable/sym_def_app_icon">        <activity
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
