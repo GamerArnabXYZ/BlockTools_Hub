@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:blocktools_hub/shared/widgets/minecraft_widgets.dart';
 
-/* Ye screen server status check karne ke liye hai (Placeholder) */
 class ServerPage extends StatelessWidget {
   const ServerPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('SERVER STATUS')),
-      body: const Center(
-        child: Text('Server Status coming soon...'),
-      ),
+    return const MinecraftBasePage(
+      title: 'Server Status',
+      body: Center(child: Text('Server Status Implementation Coming Soon')),
     );
   }
 }

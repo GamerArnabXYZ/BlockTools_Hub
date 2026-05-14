@@ -1,80 +1,87 @@
 import 'package:flutter/material.dart';
+import 'package:blocktools_hub/shared/widgets/minecraft_widgets.dart';
 import 'package:blocktools_hub/features/seed_tools/presentation/pages/seed_page.dart';
 import 'package:blocktools_hub/features/skin_viewer/presentation/pages/skin_page.dart';
 import 'package:blocktools_hub/features/command_gen/presentation/pages/command_page.dart';
 import 'package:blocktools_hub/features/player_lookup/presentation/pages/player_page.dart';
 import 'package:blocktools_hub/features/server_status/presentation/pages/server_page.dart';
 
-/* Dashboard screen jo saare tools ko access karne deti hai */
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('BLOCKTOOLS HUB'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: GridView.count(
-          crossAxisCount: 2,
-          crossAxisSpacing: 10,
-          mainAxisSpacing: 10,
+    return MinecraftBasePage(
+      title: 'BlockTools Hub',
+      body: SingleChildScrollView(
+        child: Column(
           children: [
-            _buildToolCard(
-              context,
-              'Seed Tools',
-              Icons.terrain,
-              () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SeedPage())),
+            const SizedBox(height: 20),
+            /* Stylized Header */
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.1),
+                border: Border.all(color: Colors.green, width: 2),
+              ),
+              child: const Column(
+                children: [
+                  Icon(Icons.auto_awesome, color: Colors.greenAccent, size: 40),
+                  SizedBox(height: 10),
+                  Text(
+                    'Welcome, Explorer!',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    'Manage your Minecraft world with ease.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 12, color: Colors.white60),
+                  ),
+                ],
+              ),
             ),
-            _buildToolCard(
-              context,
-              'Skin Viewer',
-              Icons.person,
-              () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SkinPage())),
+            const SizedBox(height: 30),
+            /* Tool Grid */
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: 2,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: 1.1,
+                children: [
+                  _buildTool(context, 'Seed Tools', Icons.landscape, Colors.brown, const SeedPage()),
+                  _buildTool(context, 'Skin Viewer', Icons.accessibility_new, Colors.blue, const SkinPage()),
+                  _buildTool(context, 'Command Gen', Icons.code, Colors.purple, const CommandPage()),
+                  _buildTool(context, 'Player Look', Icons.person_search, Colors.orange, const PlayerPage()),
+                  _buildTool(context, 'Server Info', Icons.dns, Colors.red, const ServerPage()),
+                ],
+              ),
             ),
-            _buildToolCard(
-              context,
-              'Command Gen',
-              Icons.terminal,
-              () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CommandPage())),
-            ),
-            _buildToolCard(
-              context,
-              'Player Lookup',
-              Icons.search,
-              () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PlayerPage())),
-            ),
-            _buildToolCard(
-              context,
-              'Server Status',
-              Icons.dns,
-              () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ServerPage())),
-            ),
+            const SizedBox(height: 20),
           ],
         ),
       ),
     );
   }
 
-  /* Common widget tool cards banane ke liye */
-  Widget _buildToolCard(BuildContext context, String title, IconData icon, VoidCallback onTap) {
-    return Card(
-      child: InkWell(
-        onTap: onTap,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 40, color: Colors.greenAccent),
-            const SizedBox(height: 10),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
+  Widget _buildTool(BuildContext context, String title, IconData icon, Color accent, Widget page) {
+    return MinecraftCard(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => page)),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 36, color: accent),
+          const SizedBox(height: 12),
+          Text(
+            title.toUpperCase(),
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }

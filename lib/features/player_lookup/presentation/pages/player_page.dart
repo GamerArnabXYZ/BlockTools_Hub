@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:blocktools_hub/shared/widgets/minecraft_widgets.dart';
 
-/* Ye screen player info search karne ke liye hai (Placeholder) */
 class PlayerPage extends StatelessWidget {
   const PlayerPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('PLAYER LOOKUP')),
-      body: const Center(
-        child: Text('Player Lookup coming soon...'),
-      ),
+    return const MinecraftBasePage(
+      title: 'Player Lookup',
+      body: Center(child: Text('Player Lookup Implementation Coming Soon')),
     );
   }
 }
