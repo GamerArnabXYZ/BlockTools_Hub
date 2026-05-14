@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:blocktools_hub/shared/widgets/minecraft_widgets.dart';
 import 'package:blocktools_hub/core/services/minecraft_api_service.dart';
 
-/* Player Lookup feature jo Mojang API se UUID aur Skin fetch karta hai */
 class PlayerPage extends StatefulWidget {
   const PlayerPage({super.key});
 
@@ -16,7 +15,6 @@ class _PlayerPageState extends State<PlayerPage> {
   bool _isLoading = false;
   String? _error;
 
-  /* Username se search karne ka logic */
   Future<void> _searchPlayer() async {
     final username = _controller.text.trim();
     if (username.isEmpty) return;
@@ -27,6 +25,7 @@ class _PlayerPageState extends State<PlayerPage> {
       _error = null;
     });
 
+    // PlayerDB use ho raha hai (CORS friendly)
     final data = await MinecraftApiService.getPlayerProfile(username);
 
     setState(() {
@@ -50,14 +49,16 @@ class _PlayerPageState extends State<PlayerPage> {
             MinecraftCard(
               child: Column(
                 children: [
-                  const Text('ENTER MINECRAFT USERNAME', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text('MINECRAFT USERNAME', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                   const SizedBox(height: 15),
                   TextField(
                     controller: _controller,
+                    style: const TextStyle(fontSize: 14),
                     decoration: const InputDecoration(
                       hintText: 'e.g. Dream',
                       filled: true,
                       fillColor: Color(0xFF1A1A1A),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       border: OutlineInputBorder(borderRadius: BorderRadius.zero),
                     ),
                   ),
@@ -67,7 +68,7 @@ class _PlayerPageState extends State<PlayerPage> {
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _searchPlayer,
                       child: _isLoading 
-                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2)) 
+                        ? const SizedBox(height: 15, width: 15, child: CircularProgressIndicator(strokeWidth: 2)) 
                         : const Text('SEARCH'),
                     ),
                   ),
@@ -76,7 +77,7 @@ class _PlayerPageState extends State<PlayerPage> {
             ),
             if (_error != null) ...[
               const SizedBox(height: 20),
-              Text(_error!, style: const TextStyle(color: Colors.redAccent)),
+              Text(_error!, style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
             ],
             if (_playerData != null) ...[
               const SizedBox(height: 20),
@@ -84,17 +85,18 @@ class _PlayerPageState extends State<PlayerPage> {
                 child: Column(
                   children: [
                     Text(_playerData!['name'].toString().toUpperCase(), 
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.greenAccent)),
-                    const SizedBox(height: 10),
-                    Text('UUID: ${_playerData!['id']}', style: const TextStyle(fontSize: 10, color: Colors.white54)),
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.greenAccent)),
+                    const SizedBox(height: 5),
+                    Text('UUID: ${_playerData!['id']}', style: const TextStyle(fontSize: 9, color: Colors.white54)),
                     const SizedBox(height: 20),
-                    /* Player Avatar Preview */
+                    /* Optimized Image Loading */
                     Image.network(
-                      MinecraftApiService.getAvatarUrl(_playerData!['id']),
-                      height: 100,
-                      width: 100,
+                      _playerData!['avatar'] ?? MinecraftApiService.getAvatarUrl(_playerData!['id']),
+                      height: 80,
+                      width: 80,
+                      cacheWidth: 160, // Memory save karne ke liye cache limit
                       fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => const Icon(Icons.person, size: 100),
+                      errorBuilder: (_, __, ___) => const Icon(Icons.person, size: 80),
                     ),
                   ],
                 ),

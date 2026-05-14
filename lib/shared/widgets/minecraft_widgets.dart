@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
 /* 
-DEEP PERFORMANCE OPTIMIZATION: 
-- Transparency (Opacity) hata di gayi hai kyunki HTML renderer pe ye laggy hota hai.
-- Box Decoration ko simplify kiya gaya hai.
+ULTRA PERFORMANCE OPTIMIZATION (LAG FIX):
+- MinecraftCard ko simplify kiya gaya hai. Multi-border rendering HTML renderer pe heavy hota hai.
+- InkWell ko remove karke GestureDetector use kiya hai (lightweight).
+- Decoration ko minimal rakha hai taaki repaint fast ho.
 */
 class MinecraftCard extends StatelessWidget {
   final Widget child;
@@ -19,17 +20,13 @@ class MinecraftCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return GestureDetector(
       onTap: onTap,
-      child: DecoratedBox(
+      child: Container(
+        // Solid borders are much faster than individual BorderSide objects
         decoration: BoxDecoration(
           color: color ?? const Color(0xFF313131),
-          border: const Border(
-            top: BorderSide(color: Color(0xFF707070), width: 3),
-            left: BorderSide(color: Color(0xFF707070), width: 3),
-            right: BorderSide(color: Color(0xFF000000), width: 3),
-            bottom: BorderSide(color: Color(0xFF000000), width: 3),
-          ),
+          border: Border.all(color: const Color(0xFF000000), width: 2),
         ),
         child: Padding(
           padding: const EdgeInsets.all(8.0),
@@ -55,11 +52,12 @@ class MinecraftBasePage extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFF1E1E1E),
       appBar: AppBar(
-        title: Text(title.toUpperCase()),
+        title: Text(title.toUpperCase(), style: const TextStyle(fontSize: 16)),
         backgroundColor: const Color(0xFF101010),
         elevation: 0,
+        centerTitle: true,
       ),
-      /* RepaintBoundary use kiya hai taaki UI sections independent render ho */
+      /* RepaintBoundary zaroori hai performance ke liye */
       body: RepaintBoundary(
         child: body,
       ),
