@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:blocktools_hub/shared/widgets/minecraft_widgets.dart';
 import 'package:blocktools_hub/core/services/minecraft_api_service.dart';
 
+/* 
+SKIN VIEWER v2:
+- Background selector.
+- Zoom & Pan support.
+- Fallback logic.
+*/
 class SkinPage extends StatefulWidget {
   const SkinPage({super.key});
 
@@ -13,12 +19,18 @@ class _SkinPageState extends State<SkinPage> {
   final TextEditingController _controller = TextEditingController();
   String? _uuid;
   bool _isLoading = false;
+  Color _bgType = const Color(0xFF1E1E1E); // Default dark
+
+  final Map<String, Color> _bgOptions = {
+    'DARK': const Color(0xFF1E1E1E),
+    'GRASS': const Color(0xFF3C8527),
+    'STONE': const Color(0xFF5A5A5A),
+  };
 
   Future<void> _fetchSkin() async {
     final username = _controller.text.trim();
     if (username.isEmpty) return;
 
-    // Hide keyboard
     FocusScope.of(context).unfocus();
 
     setState(() {
@@ -33,9 +45,7 @@ class _SkinPageState extends State<SkinPage> {
       if (data != null) {
         _uuid = data['id'];
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Player not found! Check spelling.')),
-        );
+        showMinecraftToast(context, 'Player not found!');
       }
     });
   }
@@ -43,73 +53,83 @@ class _SkinPageState extends State<SkinPage> {
   @override
   Widget build(BuildContext context) {
     return MinecraftBasePage(
-      title: 'Skin Viewer',
+      title: 'Skin Viewer v2',
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
+            /* Search Input */
             MinecraftCard(
               child: Column(
                 children: [
-                  const Text('VIEW PLAYER SKIN', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                  const SizedBox(height: 15),
                   TextField(
                     controller: _controller,
                     style: const TextStyle(fontSize: 14),
                     decoration: const InputDecoration(
-                      hintText: 'Enter username (e.g. Notch)',
+                      hintText: 'Enter username...',
                       filled: true,
                       fillColor: Color(0xFF1A1A1A),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                       border: OutlineInputBorder(borderRadius: BorderRadius.zero),
                     ),
                     onSubmitted: (_) => _fetchSkin(),
                   ),
-                  const SizedBox(height: 15),
+                  const SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _fetchSkin,
-                      child: _isLoading 
-                        ? const SizedBox(height: 15, width: 15, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) 
-                        : const Text('VIEW SKIN'),
+                      child: const Text('VIEW SKIN'),
                     ),
                   ),
                 ],
               ),
             ),
+
             if (_uuid != null) ...[
-              const SizedBox(height: 25),
+              const SizedBox(height: 20),
+              
+              /* Background Selector */
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: _bgOptions.entries.map((e) => Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                  child: ActionChip(
+                    label: Text(e.key, style: const TextStyle(fontSize: 9)),
+                    backgroundColor: _bgType == e.value ? Colors.blueAccent : const Color(0xFF313131),
+                    onPressed: () => setState(() => _bgType = e.value),
+                    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+                  ),
+                )).toList(),
+              ),
+
+              const SizedBox(height: 10),
+
+              /* Render Display */
               MinecraftCard(
-                child: Column(
-                  children: [
-                    const Text('2D FULL BODY PREVIEW', style: TextStyle(fontSize: 10, color: Colors.white54)),
-                    const SizedBox(height: 20),
-                    /* Fixed Skin Render using mc-heads.net */
-                    Image.network(
-                      MinecraftApiService.getSkinRenderUrl(_uuid!),
-                      height: 300,
-                      fit: BoxFit.contain,
-                      loadingBuilder: (_, child, progress) {
-                        if (progress == null) return child;
-                        return const SizedBox(
-                          height: 300,
-                          child: Center(child: CircularProgressIndicator(color: Colors.green)),
-                        );
-                      },
-                      errorBuilder: (_, __, ___) => const Column(
-                        children: [
-                          Icon(Icons.error_outline, color: Colors.redAccent, size: 50),
-                          SizedBox(height: 10),
-                          Text('Failed to load skin render', style: TextStyle(fontSize: 10)),
-                        ],
+                color: _bgType,
+                padding: 0,
+                child: SizedBox(
+                  height: 400,
+                  width: double.infinity,
+                  child: InteractiveViewer(
+                    minScale: 1.0,
+                    maxScale: 3.0,
+                    child: Center(
+                      child: Image.network(
+                        MinecraftApiService.getSkinRenderUrl(_uuid!),
+                        fit: BoxFit.contain,
+                        loadingBuilder: (_, child, progress) {
+                          if (progress == null) return child;
+                          return const CircularProgressIndicator(color: Colors.white);
+                        },
+                        errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 50),
                       ),
                     ),
-                    const SizedBox(height: 15),
-                    Text('UUID: $_uuid', style: const TextStyle(fontSize: 8, color: Colors.white24)),
-                  ],
+                  ),
                 ),
               ),
+              const SizedBox(height: 10),
+              const Text('PINCH TO ZOOM • DRAG TO PAN', style: TextStyle(fontSize: 8, color: Colors.white24)),
             ],
           ],
         ),

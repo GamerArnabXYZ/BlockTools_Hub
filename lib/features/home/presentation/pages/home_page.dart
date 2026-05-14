@@ -1,18 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:blocktools_hub/shared/widgets/minecraft_widgets.dart';
+import 'package:blocktools_hub/core/services/storage_service.dart';
 import 'package:blocktools_hub/features/seed_tools/presentation/pages/seed_page.dart';
 import 'package:blocktools_hub/features/skin_viewer/presentation/pages/skin_page.dart';
 import 'package:blocktools_hub/features/command_gen/presentation/pages/command_page.dart';
 import 'package:blocktools_hub/features/player_lookup/presentation/pages/player_page.dart';
 import 'package:blocktools_hub/features/server_status/presentation/pages/server_page.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  int _searchCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStats();
+  }
+
+  void _loadStats() {
+    setState(() {
+      _searchCount = StorageService.getHistory('player_history').length + 
+                     StorageService.getHistory('server_history').length;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return MinecraftBasePage(
-      title: 'BlockTools Hub',
+      title: 'BlockTools Hub v3',
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
@@ -21,24 +42,23 @@ class HomePage extends StatelessWidget {
                 const SizedBox(height: 20),
                 /* Solid colors optimized for performance */
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                   margin: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF142414), // Solid dark green instead of opacity
+                    color: const Color(0xFF142414),
                     border: Border.all(color: const Color(0xFF3C8527), width: 2),
                   ),
-                  child: const Column(
+                  child: Column(
                     children: [
-                      Icon(Icons.auto_awesome, color: Color(0xFF00FF00), size: 40),
-                      SizedBox(height: 10),
-                      Text(
-                        'Welcome, Explorer!',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      const Icon(Icons.auto_awesome, color: Color(0xFF00FF00), size: 30),
+                      const SizedBox(height: 10),
+                      const Text(
+                        'DASHBOARD ACTIVE',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1.2),
                       ),
                       Text(
-                        'Manage your Minecraft world with ease.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 12, color: Color(0xFF999999)),
+                        '$_searchCount RECENT ACTIVITIES TRACKED',
+                        style: const TextStyle(fontSize: 9, color: Color(0xFF999999)),
                       ),
                     ],
                   ),
@@ -47,6 +67,7 @@ class HomePage extends StatelessWidget {
               ],
             ),
           ),
+          /* Optimized Tool Grid */
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             sliver: SliverGrid(
@@ -65,7 +86,7 @@ class HomePage extends StatelessWidget {
               ]),
             ),
           ),
-          const SliverToBoxAdapter(child: SizedBox(height: 20)),
+          const SliverToBoxAdapter(child: SizedBox(height: 30)),
         ],
       ),
     );
@@ -73,15 +94,15 @@ class HomePage extends StatelessWidget {
 
   Widget _buildTool(BuildContext context, String title, IconData icon, Color accent, Widget page) {
     return MinecraftCard(
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => page)),
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => page)).then((_) => _loadStats()),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 36, color: accent),
+          Icon(icon, size: 32, color: accent),
           const SizedBox(height: 12),
           Text(
             title.toUpperCase(),
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ),
         ],

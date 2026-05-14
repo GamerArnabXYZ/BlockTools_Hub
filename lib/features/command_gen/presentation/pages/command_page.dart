@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:blocktools_hub/shared/widgets/minecraft_widgets.dart';
 
-/* Command Generator jo basic templates use karke command strings banata hai */
+/* 
+COMMAND GEN v2:
+- Presets Library.
+- Improved feedback.
+- Category-specific inputs.
+*/
 class CommandPage extends StatefulWidget {
   const CommandPage({super.key});
 
@@ -17,25 +22,30 @@ class _CommandPageState extends State<CommandPage> {
   final TextEditingController _countController = TextEditingController(text: '64');
   String _generatedCommand = '';
 
-  final List<String> _categories = ['Give Item', 'Teleport', 'Summon', 'Effect'];
+  final Map<String, List<String>> _presets = {
+    'Give Item': ['diamond', 'netherite_ingot', 'golden_apple', 'elytra'],
+    'Teleport': ['@p', '@a', '@r', '@e'],
+    'Summon': ['zombie', 'creeper', 'ender_dragon', 'tnt'],
+    'Effect': ['speed', 'strength', 'regeneration', 'night_vision'],
+  };
 
-  /* Command generate karne ka logic */
   void _generate() {
     String cmd = '';
     final target = _targetController.text.trim();
+    final item = _itemController.text.trim();
     
     switch (_selectedCategory) {
       case 'Give Item':
-        cmd = '/give $target ${_itemController.text.trim()} ${_countController.text.trim()}';
+        cmd = '/give $target minecraft:$item ${_countController.text.trim()}';
         break;
       case 'Teleport':
         cmd = '/tp $target ~ ~ ~';
         break;
       case 'Summon':
-        cmd = '/summon ${_itemController.text.trim()} ~ ~ ~';
+        cmd = '/summon minecraft:$item ~ ~ ~';
         break;
       case 'Effect':
-        cmd = '/effect give $target ${_itemController.text.trim()} 30 1';
+        cmd = '/effect give $target minecraft:$item 30 1';
         break;
     }
 
@@ -47,7 +57,7 @@ class _CommandPageState extends State<CommandPage> {
   @override
   Widget build(BuildContext context) {
     return MinecraftBasePage(
-      title: 'Command Gen',
+      title: 'Command Builder v2',
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -55,28 +65,50 @@ class _CommandPageState extends State<CommandPage> {
             MinecraftCard(
               child: Column(
                 children: [
-                  const Text('COMMAND SETTINGS', style: TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 20),
                   DropdownButtonFormField<String>(
                     value: _selectedCategory,
-                    items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-                    onChanged: (val) => setState(() => _selectedCategory = val!),
+                    dropdownColor: const Color(0xFF313131),
+                    items: _presets.keys.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                    onChanged: (val) => setState(() {
+                      _selectedCategory = val!;
+                      _itemController.text = _presets[val]!.first;
+                    }),
                     decoration: const InputDecoration(labelText: 'Category', border: OutlineInputBorder()),
                   ),
                   const SizedBox(height: 15),
                   TextField(
                     controller: _targetController,
-                    decoration: const InputDecoration(labelText: 'Target (@p, @a, Username)', border: OutlineInputBorder()),
+                    decoration: const InputDecoration(labelText: 'Target', border: OutlineInputBorder()),
                   ),
                   const SizedBox(height: 15),
                   TextField(
                     controller: _itemController,
-                    decoration: InputDecoration(
-                      labelText: (_selectedCategory == 'Give Item' || _selectedCategory == 'Summon' || _selectedCategory == 'Effect') 
-                        ? 'Item/Entity/Effect ID' : 'N/A', 
-                      border: const OutlineInputBorder()
+                    decoration: const InputDecoration(labelText: 'ID / Name', border: OutlineInputBorder()),
+                  ),
+                  
+                  /* Preset Suggestions */
+                  const SizedBox(height: 10),
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text('PRESETS:', style: TextStyle(fontSize: 8, color: Colors.white54)),
+                  ),
+                  const SizedBox(height: 5),
+                  SizedBox(
+                    height: 30,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: _presets[_selectedCategory]!.map((p) => Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: ActionChip(
+                          label: Text(p, style: const TextStyle(fontSize: 10)),
+                          onPressed: () => setState(() => _itemController.text = p),
+                          backgroundColor: Colors.black26,
+                          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+                        ),
+                      )).toList(),
                     ),
                   ),
+
                   if (_selectedCategory == 'Give Item') ...[
                     const SizedBox(height: 15),
                     TextField(
@@ -88,7 +120,7 @@ class _CommandPageState extends State<CommandPage> {
                   const SizedBox(height: 20),
                   SizedBox(
                     width: double.infinity,
-                    child: ElevatedButton(onPressed: _generate, child: const Text('GENERATE')),
+                    child: ElevatedButton(onPressed: _generate, child: const Text('BUILD COMMAND')),
                   ),
                 ],
               ),
@@ -99,17 +131,14 @@ class _CommandPageState extends State<CommandPage> {
                 color: const Color(0xFF101010),
                 child: Column(
                   children: [
-                    const Text('RESULT:', style: TextStyle(fontSize: 10, color: Colors.white54)),
-                    const SizedBox(height: 10),
-                    Text(_generatedCommand, style: const TextStyle(color: Colors.greenAccent, fontFamily: 'monospace')),
+                    Text(_generatedCommand, style: const TextStyle(color: Colors.greenAccent, fontSize: 11, fontFamily: 'monospace')),
                     const SizedBox(height: 15),
-                    ElevatedButton.icon(
+                    ElevatedButton(
                       onPressed: () {
                         Clipboard.setData(ClipboardData(text: _generatedCommand));
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Command Copied!')));
+                        showMinecraftToast(context, 'Command Copied!');
                       },
-                      icon: const Icon(Icons.copy, size: 16),
-                      label: const Text('COPY TO CLIPBOARD'),
+                      child: const Text('COPY TO CLIPBOARD'),
                     ),
                   ],
                 ),

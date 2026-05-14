@@ -11,6 +11,8 @@ dependencies:
   provider: ^6.0.5
   cupertino_icons: ^1.0.2
   http: ^1.1.0 # API calls ke liye add kiya gaya hai
+  shared_preferences: ^2.2.2 # Local data storage ke liye add kiya gaya hai
+
 
 
 dev_dependencies:
