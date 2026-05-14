@@ -10,6 +10,8 @@ dependencies:
     sdk: flutter
   provider: ^6.0.5
   cupertino_icons: ^1.0.2
+  http: ^1.1.0 # API calls ke liye add kiya gaya hai
+
 
 dev_dependencies:
   flutter_test:
