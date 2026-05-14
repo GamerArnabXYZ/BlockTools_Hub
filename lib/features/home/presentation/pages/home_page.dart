@@ -13,57 +13,61 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return MinecraftBasePage(
       title: 'BlockTools Hub',
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            const SizedBox(height: 20),
-            /* Stylized Header */
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.1),
-                border: Border.all(color: Colors.green, width: 2),
-              ),
-              child: const Column(
-                children: [
-                  Icon(Icons.auto_awesome, color: Colors.greenAccent, size: 40),
-                  SizedBox(height: 10),
-                  Text(
-                    'Welcome, Explorer!',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: Column(
+              children: [
+                const SizedBox(height: 20),
+                /* Stylized Header */
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    border: Border.all(color: Colors.green, width: 2),
                   ),
-                  Text(
-                    'Manage your Minecraft world with ease.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 12, color: Colors.white60),
+                  child: const Column(
+                    children: [
+                      Icon(Icons.auto_awesome, color: Colors.greenAccent, size: 40),
+                      SizedBox(height: 10),
+                      Text(
+                        'Welcome, Explorer!',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        'Manage your Minecraft world with ease.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 12, color: Colors.white60),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 30),
+              ],
             ),
-            const SizedBox(height: 30),
-            /* Tool Grid */
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
+          ),
+          /* Optimized Tool Grid using Slivers */
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            sliver: SliverGrid(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
                 childAspectRatio: 1.1,
-                children: [
-                  _buildTool(context, 'Seed Tools', Icons.landscape, Colors.brown, const SeedPage()),
-                  _buildTool(context, 'Skin Viewer', Icons.accessibility_new, Colors.blue, const SkinPage()),
-                  _buildTool(context, 'Command Gen', Icons.code, Colors.purple, const CommandPage()),
-                  _buildTool(context, 'Player Look', Icons.person_search, Colors.orange, const PlayerPage()),
-                  _buildTool(context, 'Server Info', Icons.dns, Colors.red, const ServerPage()),
-                ],
               ),
+              delegate: SliverChildListDelegate([
+                _buildTool(context, 'Seed Tools', Icons.landscape, Colors.brown, const SeedPage()),
+                _buildTool(context, 'Skin Viewer', Icons.accessibility_new, Colors.blue, const SkinPage()),
+                _buildTool(context, 'Command Gen', Icons.code, Colors.purple, const CommandPage()),
+                _buildTool(context, 'Player Look', Icons.person_search, Colors.orange, const PlayerPage()),
+                _buildTool(context, 'Server Info', Icons.dns, Colors.red, const ServerPage()),
+              ]),
             ),
-            const SizedBox(height: 20),
-          ],
-        ),
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 20)),
+        ],
       ),
     );
   }

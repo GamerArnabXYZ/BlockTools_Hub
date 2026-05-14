@@ -60,13 +60,7 @@ class MinecraftBasePage extends StatelessWidget {
             : null,
       ),
       body: Container(
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: NetworkImage('https://www.transparenttextures.com/patterns/dark-matter.png'),
-            repeat: ImageRepeat.repeat,
-            opacity: 0.1,
-          ),
-        ),
+        color: const Color(0xFF1E1E1E), // Texture hata diya performance ke liye
         child: body,
       ),
     );
