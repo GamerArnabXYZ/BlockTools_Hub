@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
-/* Custom card widget jo Minecraft block jaisa dikhta hai */
+/* 
+DEEP PERFORMANCE OPTIMIZATION: 
+- Transparency (Opacity) hata di gayi hai kyunki HTML renderer pe ye laggy hota hai.
+- Box Decoration ko simplify kiya gaya hai.
+*/
 class MinecraftCard extends StatelessWidget {
   final Widget child;
   final VoidCallback? onTap;
@@ -15,16 +19,16 @@ class MinecraftCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return InkWell(
       onTap: onTap,
-      child: Container(
+      child: DecoratedBox(
         decoration: BoxDecoration(
           color: color ?? const Color(0xFF313131),
           border: const Border(
-            top: BorderSide(color: Color(0xFF8B8B8B), width: 4),
-            left: BorderSide(color: Color(0xFF8B8B8B), width: 4),
-            right: BorderSide(color: Color(0xFF000000), width: 4),
-            bottom: BorderSide(color: Color(0xFF000000), width: 4),
+            top: BorderSide(color: Color(0xFF707070), width: 3),
+            left: BorderSide(color: Color(0xFF707070), width: 3),
+            right: BorderSide(color: Color(0xFF000000), width: 3),
+            bottom: BorderSide(color: Color(0xFF000000), width: 3),
           ),
         ),
         child: Padding(
@@ -36,7 +40,6 @@ class MinecraftCard extends StatelessWidget {
   }
 }
 
-/* Base page widget common layout ke liye */
 class MinecraftBasePage extends StatelessWidget {
   final String title;
   final Widget body;
@@ -50,17 +53,14 @@ class MinecraftBasePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF1E1E1E),
       appBar: AppBar(
         title: Text(title.toUpperCase()),
-        leading: Navigator.canPop(context)
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new, size: 18),
-                onPressed: () => Navigator.pop(context),
-              )
-            : null,
+        backgroundColor: const Color(0xFF101010),
+        elevation: 0,
       ),
-      body: Container(
-        color: const Color(0xFF1E1E1E), // Texture hata diya performance ke liye
+      /* RepaintBoundary use kiya hai taaki UI sections independent render ho */
+      body: RepaintBoundary(
         child: body,
       ),
     );

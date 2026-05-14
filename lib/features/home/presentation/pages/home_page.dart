@@ -19,17 +19,17 @@ class HomePage extends StatelessWidget {
             child: Column(
               children: [
                 const SizedBox(height: 20),
-                /* Stylized Header */
+                /* Solid colors optimized for performance */
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   margin: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
-                    border: Border.all(color: Colors.green, width: 2),
+                    color: const Color(0xFF142414), // Solid dark green instead of opacity
+                    border: Border.all(color: const Color(0xFF3C8527), width: 2),
                   ),
                   child: const Column(
                     children: [
-                      Icon(Icons.auto_awesome, color: Colors.greenAccent, size: 40),
+                      Icon(Icons.auto_awesome, color: Color(0xFF00FF00), size: 40),
                       SizedBox(height: 10),
                       Text(
                         'Welcome, Explorer!',
@@ -38,7 +38,7 @@ class HomePage extends StatelessWidget {
                       Text(
                         'Manage your Minecraft world with ease.',
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 12, color: Colors.white60),
+                        style: TextStyle(fontSize: 12, color: Color(0xFF999999)),
                       ),
                     ],
                   ),
@@ -47,7 +47,6 @@ class HomePage extends StatelessWidget {
               ],
             ),
           ),
-          /* Optimized Tool Grid using Slivers */
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             sliver: SliverGrid(
@@ -58,11 +57,11 @@ class HomePage extends StatelessWidget {
                 childAspectRatio: 1.1,
               ),
               delegate: SliverChildListDelegate([
-                _buildTool(context, 'Seed Tools', Icons.landscape, Colors.brown, const SeedPage()),
-                _buildTool(context, 'Skin Viewer', Icons.accessibility_new, Colors.blue, const SkinPage()),
-                _buildTool(context, 'Command Gen', Icons.code, Colors.purple, const CommandPage()),
-                _buildTool(context, 'Player Look', Icons.person_search, Colors.orange, const PlayerPage()),
-                _buildTool(context, 'Server Info', Icons.dns, Colors.red, const ServerPage()),
+                _buildTool(context, 'Seed Tools', Icons.landscape, const Color(0xFF795548), const SeedPage()),
+                _buildTool(context, 'Skin Viewer', Icons.accessibility_new, const Color(0xFF2196F3), const SkinPage()),
+                _buildTool(context, 'Command Gen', Icons.code, const Color(0xFF9C27B0), const CommandPage()),
+                _buildTool(context, 'Player Look', Icons.person_search, const Color(0xFFFF9800), const PlayerPage()),
+                _buildTool(context, 'Server Info', Icons.dns, const Color(0xFFF44336), const ServerPage()),
               ]),
             ),
           ),
