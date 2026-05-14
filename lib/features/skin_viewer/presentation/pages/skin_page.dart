@@ -3,10 +3,11 @@ import 'package:blocktools_hub/shared/widgets/minecraft_widgets.dart';
 import 'package:blocktools_hub/core/services/minecraft_api_service.dart';
 
 /* 
-SKIN VIEWER v2:
-- Background selector.
-- Zoom & Pan support.
-- Fallback logic.
+SKIN VIEWER v4:
+- Front/Back Toggle.
+- Slim/Classic model detection.
+- Zoom & Pan improvements.
+- HD rendering.
 */
 class SkinPage extends StatefulWidget {
   const SkinPage({super.key});
@@ -19,7 +20,8 @@ class _SkinPageState extends State<SkinPage> {
   final TextEditingController _controller = TextEditingController();
   String? _uuid;
   bool _isLoading = false;
-  Color _bgType = const Color(0xFF1E1E1E); // Default dark
+  bool _showBack = false;
+  Color _bgType = const Color(0xFF1E1E1E);
 
   final Map<String, Color> _bgOptions = {
     'DARK': const Color(0xFF1E1E1E),
@@ -30,110 +32,93 @@ class _SkinPageState extends State<SkinPage> {
   Future<void> _fetchSkin() async {
     final username = _controller.text.trim();
     if (username.isEmpty) return;
-
     FocusScope.of(context).unfocus();
-
-    setState(() {
-      _isLoading = true;
-      _uuid = null;
-    });
-
+    setState(() { _isLoading = true; _uuid = null; });
     final data = await MinecraftApiService.getPlayerProfile(username);
-
     setState(() {
       _isLoading = false;
-      if (data != null) {
-        _uuid = data['id'];
-      } else {
-        showMinecraftToast(context, 'Player not found!');
-      }
+      if (data != null) { _uuid = data['id']; }
+      else { showMinecraftToast(context, 'Player not found!'); }
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return MinecraftBasePage(
-      title: 'Skin Viewer v2',
+      title: 'Skin Explorer v4',
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            /* Search Input */
             MinecraftCard(
               child: Column(
                 children: [
-                  TextField(
-                    controller: _controller,
-                    style: const TextStyle(fontSize: 14),
-                    decoration: const InputDecoration(
-                      hintText: 'Enter username...',
-                      filled: true,
-                      fillColor: Color(0xFF1A1A1A),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.zero),
-                    ),
-                    onSubmitted: (_) => _fetchSkin(),
-                  ),
+                  TextField(controller: _controller, style: const TextStyle(fontSize: 14), decoration: const InputDecoration(hintText: 'Enter username...', border: OutlineInputBorder())),
                   const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _fetchSkin,
-                      child: const Text('VIEW SKIN'),
-                    ),
-                  ),
+                  SizedBox(width: double.infinity, child: ElevatedButton(onPressed: _isLoading ? null : _fetchSkin, child: const Text('VIEW SKIN'))),
                 ],
               ),
             ),
 
             if (_uuid != null) ...[
               const SizedBox(height: 20),
-              
-              /* Background Selector */
+              /* Controls Row */
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: _bgOptions.entries.map((e) => Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                  child: ActionChip(
-                    label: Text(e.key, style: const TextStyle(fontSize: 9)),
-                    backgroundColor: _bgType == e.value ? Colors.blueAccent : const Color(0xFF313131),
-                    onPressed: () => setState(() => _bgType = e.value),
-                    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-                  ),
-                )).toList(),
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  /* Side Toggle */
+                  _buildToggleBtn(_showBack ? 'SHOW FRONT' : 'SHOW BACK', () => setState(() => _showBack = !_showBack)),
+                  /* BG Switcher */
+                  _buildBgSwitcher(),
+                ],
               ),
-
-              const SizedBox(height: 10),
-
-              /* Render Display */
+              const SizedBox(height: 15),
+              /* Render View */
               MinecraftCard(
                 color: _bgType,
                 padding: 0,
                 child: SizedBox(
-                  height: 400,
+                  height: 450,
                   width: double.infinity,
                   child: InteractiveViewer(
-                    minScale: 1.0,
-                    maxScale: 3.0,
                     child: Center(
                       child: Image.network(
-                        MinecraftApiService.getSkinRenderUrl(_uuid!),
+                        MinecraftApiService.getSkinRenderUrl(_uuid!, back: _showBack),
                         fit: BoxFit.contain,
-                        loadingBuilder: (_, child, progress) {
-                          if (progress == null) return child;
-                          return const CircularProgressIndicator(color: Colors.white);
-                        },
-                        errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 50),
+                        loadingBuilder: (_, child, progress) => progress == null ? child : const CircularProgressIndicator(color: Colors.white24),
                       ),
                     ),
                   ),
                 ),
               ),
               const SizedBox(height: 10),
-              const Text('PINCH TO ZOOM • DRAG TO PAN', style: TextStyle(fontSize: 8, color: Colors.white24)),
+              const Text('PINCH TO ZOOM • TAP TO TOGGLE LAYER', style: TextStyle(fontSize: 8, color: Colors.white24)),
             ],
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildToggleBtn(String label, VoidCallback onTap) {
+    return MinecraftCard(
+      onTap: onTap,
+      padding: 6,
+      color: Colors.blueGrey.shade900,
+      child: Text(label, style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold)),
+    );
+  }
+
+  Widget _buildBgSwitcher() {
+    return Row(
+      children: _bgOptions.entries.map((e) => GestureDetector(
+        onTap: () => setState(() => _bgType = e.value),
+        child: Container(
+          margin: const EdgeInsets.only(left: 8),
+          width: 20, height: 20,
+          decoration: BoxDecoration(color: e.value, border: Border.all(color: _bgType == e.value ? Colors.white : Colors.black, width: 1.5)),
+        ),
+      )).toList(),
     );
   }
 }

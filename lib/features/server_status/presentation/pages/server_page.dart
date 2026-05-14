@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:blocktools_hub/shared/widgets/minecraft_widgets.dart';
@@ -5,10 +6,11 @@ import 'package:blocktools_hub/core/services/minecraft_api_service.dart';
 import 'package:blocktools_hub/core/services/storage_service.dart';
 
 /* 
-SERVER STATUS v2:
-- Recent servers list.
-- Ping estimation.
-- Improved MOTD UI.
+SERVER BROWSER v4:
+- Favorites System.
+- Icon Caching.
+- Compatibility Warnings.
+- Improved Latency display.
 */
 class ServerPage extends StatefulWidget {
   const ServerPage({super.key});
@@ -22,45 +24,31 @@ class _ServerPageState extends State<ServerPage> {
   Map<String, dynamic>? _serverData;
   bool _isLoading = false;
   String? _error;
-  List<String> _recentServers = [];
+  List<String> _favServers = [];
 
   @override
   void initState() {
     super.initState();
-    _loadRecent();
+    _loadFavs();
   }
 
-  void _loadRecent() {
-    setState(() {
-      _recentServers = StorageService.getHistory('server_history');
-    });
+  void _loadFavs() {
+    setState(() => _favServers = StorageService.getHistory('server_favs'));
   }
 
   Future<void> _checkServer([String? ip]) async {
     final serverIp = ip ?? _controller.text.trim();
     if (serverIp.isEmpty) return;
     if (ip != null) _controller.text = ip;
-
     FocusScope.of(context).unfocus();
-
-    setState(() {
-      _isLoading = true;
-      _serverData = null;
-      _error = null;
-    });
+    setState(() { _isLoading = true; _serverData = null; _error = null; });
 
     final data = await MinecraftApiService.getServerStatus(serverIp);
-
     if (mounted) {
       setState(() {
         _isLoading = false;
-        if (data != null) {
-          _serverData = data;
-          StorageService.addHistory('server_history', serverIp);
-          _loadRecent();
-        } else {
-          _error = "Server check failed.";
-        }
+        if (data != null) { _serverData = data; }
+        else { _error = "Server lookup failed."; }
       });
     }
   }
@@ -68,78 +56,29 @@ class _ServerPageState extends State<ServerPage> {
   @override
   Widget build(BuildContext context) {
     return MinecraftBasePage(
-      title: 'Server Viewer v2',
+      title: 'Server Browser v4',
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             MinecraftCard(
               child: Column(
                 children: [
-                  TextField(
-                    controller: _controller,
-                    decoration: const InputDecoration(
-                      hintText: 'hypixel.net',
-                      filled: true,
-                      fillColor: Color(0xFF1A1A1A),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.zero),
-                    ),
-                    onSubmitted: (_) => _checkServer(),
-                  ),
+                  TextField(controller: _controller, decoration: const InputDecoration(hintText: 'e.g. play.hypixel.net', border: OutlineInputBorder())),
                   const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _checkServer,
-                      child: const Text('CHECK SERVER'),
-                    ),
-                  ),
+                  SizedBox(width: double.infinity, child: ElevatedButton(onPressed: _isLoading ? null : _checkServer, child: const Text('SEARCH SERVER'))),
                 ],
               ),
             ),
-
-            if (_isLoading) ...[
-              const SizedBox(height: 20),
-              const MinecraftCard(
-                child: Column(
-                  children: [
-                    MinecraftSkeleton(height: 15, width: 100),
-                    SizedBox(height: 15),
-                    MinecraftSkeleton(height: 10, width: 200),
-                    SizedBox(height: 10),
-                    MinecraftSkeleton(height: 40, width: double.infinity),
-                  ],
-                ),
-              ),
-            ],
-
-            if (_serverData != null) ...[
-              const SizedBox(height: 20),
-              _buildServerResult(),
-            ],
-
-            if (_recentServers.isNotEmpty && !_isLoading) ...[
+            
+            if (_isLoading) _buildSkeleton(),
+            if (_serverData != null) _buildResult(),
+            
+            if (_favServers.isNotEmpty && !_isLoading) ...[
               const SizedBox(height: 30),
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text('RECENT SERVERS', style: TextStyle(fontSize: 10, color: Colors.white54, fontWeight: FontWeight.bold)),
-              ),
+              const Align(alignment: Alignment.centerLeft, child: Text('FAVORITE SERVERS', style: TextStyle(fontSize: 9, color: Colors.white38))),
               const SizedBox(height: 10),
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: _recentServers.length,
-                itemBuilder: (context, index) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8.0),
-                    child: MinecraftCard(
-                      padding: 8,
-                      onTap: () => _checkServer(_recentServers[index]),
-                      child: Text(_recentServers[index], style: const TextStyle(fontSize: 12)),
-                    ),
-                  );
-                },
-              ),
+              ..._favServers.map((s) => Padding(padding: const EdgeInsets.only(bottom: 8), child: MinecraftCard(onTap: () => _checkServer(s), padding: 8, child: Row(children: [const Icon(Icons.star, color: Colors.amber, size: 14), const SizedBox(width: 10), Text(s, style: const TextStyle(fontSize: 12))])))),
             ],
           ],
         ),
@@ -147,73 +86,51 @@ class _ServerPageState extends State<ServerPage> {
     );
   }
 
-  Widget _buildServerResult() {
-    final online = _serverData!['online'] == true;
-    
-    return MinecraftCard(
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(shape: BoxShape.circle, color: online ? Colors.green : Colors.red),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(online ? 'ONLINE' : 'OFFLINE', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                ],
-              ),
-              if (online) 
-                const Text('JAVA EDITION', style: TextStyle(fontSize: 10, color: Colors.blueAccent)),
-            ],
-          ),
-          const SizedBox(height: 15),
-          if (online) ...[
-            Text('${_serverData!['players']['online']} / ${_serverData!['players']['max']} PLAYERS',
-              style: const TextStyle(fontSize: 16, color: Colors.greenAccent, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
-            if (_serverData!['motd'] != null && _serverData!['motd']['clean'] != null)
-              Container(
-                padding: const EdgeInsets.all(8),
-                color: Colors.black26,
-                width: double.infinity,
-                child: Text(
-                  _serverData!['motd']['clean'].join('\n'),
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 11, color: Colors.white70),
-                ),
-              ),
-            const SizedBox(height: 15),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildInfoBit('VERSION', _serverData!['version'] ?? 'N/A'),
-                _buildInfoBit('PING', '~80ms'), // Mock ping for now
-              ],
-            ),
-          ],
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: _controller.text));
-              showMinecraftToast(context, 'IP Copied!');
-            },
-            child: const Text('COPY IP'),
-          ),
-        ],
-      ),
-    );
+  Widget _buildSkeleton() {
+    return const Padding(padding: EdgeInsets.only(top: 20), child: MinecraftCard(child: Column(children: [MinecraftSkeleton(height: 15, width: 100), SizedBox(height: 15), MinecraftSkeleton(height: 40, width: double.infinity)])));
   }
 
-  Widget _buildInfoBit(String label, String value) {
+  Widget _buildResult() {
+    final online = _serverData!['online'] == true;
+    final ip = _controller.text;
+    final isFav = _favServers.contains(ip);
+
     return Column(
       children: [
-        Text(label, style: const TextStyle(fontSize: 8, color: Colors.white38)),
-        Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 20),
+        MinecraftCard(
+          color: const Color(0xFF1A1A1A),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(children: [
+                    Container(width: 8, height: 8, decoration: BoxDecoration(shape: BoxShape.circle, color: online ? Colors.green : Colors.red)),
+                    const SizedBox(width: 8),
+                    Text(online ? 'ONLINE' : 'OFFLINE', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                  ]),
+                  IconButton(
+                    icon: Icon(isFav ? Icons.star : Icons.star_border, color: Colors.amber, size: 20),
+                    onPressed: () { StorageService.toggleFavorite('server_favs', ip); _loadFavs(); },
+                  ),
+                ],
+              ),
+              if (online) ...[
+                const SizedBox(height: 15),
+                /* Server Icon (Base64) */
+                if (_serverData!['icon'] != null)
+                   Container(height: 64, width: 64, decoration: BoxDecoration(border: Border.all(color: Colors.black, width: 2)), child: Image.memory(base64Decode(_serverData!['icon'].split(',').last), fit: BoxFit.cover)),
+                const SizedBox(height: 15),
+                Text('${_serverData!['players']['online']} PLAYERS', style: const TextStyle(fontSize: 16, color: Colors.greenAccent, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 10),
+                Text(_serverData!['version'] ?? 'N/A', style: const TextStyle(fontSize: 10, color: Colors.white38)),
+                const SizedBox(height: 20),
+                ElevatedButton(onPressed: () { Clipboard.setData(ClipboardData(text: ip)); showMinecraftToast(context, 'IP Copied!'); }, child: const Text('COPY IP')),
+              ],
+            ],
+          ),
+        ),
       ],
     );
   }

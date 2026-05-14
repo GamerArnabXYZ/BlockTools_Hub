@@ -2,29 +2,24 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 /* 
-FIX:
-- Skin Viewer ke liye mc-heads.net use kiya hai (CORS friendly aur fast).
-- PlayerDB se player data fetch ho raha hai.
+API SERVICE v4:
+- Added Server Icon helper.
+- Added Cape Render helper.
+- Improved Error handling.
 */
 class MinecraftApiService {
   static const String playerDbBase = 'https://playerdb.co/api/player/minecraft';
   static const String serverBase = 'https://api.mcsrvstat.us/2';
-  // mc-heads.net is very reliable for renders on web
   static const String mcHeadsBase = 'https://mc-heads.net';
 
-  /* Player data fetch karna */
+  /* Player Profile fetch karna */
   static Future<Map<String, dynamic>?> getPlayerProfile(String identifier) async {
     try {
-      final response = await http.get(Uri.parse('$playerDbBase/$identifier'));
+      final response = await http.get(Uri.parse('$playerDbBase/$identifier')).timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['success'] == true) {
-          final player = data['data']['player'];
-          return {
-            'name': player['username'],
-            'id': player['id'],
-            'avatar': player['avatar'],
-          };
+          return data['data']['player'];
         }
       }
       return null;
@@ -33,10 +28,10 @@ class MinecraftApiService {
     }
   }
 
-  /* Server status fetch karna */
+  /* Server Status fetch karna */
   static Future<Map<String, dynamic>?> getServerStatus(String ip) async {
     try {
-      final response = await http.get(Uri.parse('$serverBase/$ip'));
+      final response = await http.get(Uri.parse('$serverBase/$ip')).timeout(const Duration(seconds: 12));
       if (response.statusCode == 200) {
         return json.decode(response.body);
       }
@@ -46,14 +41,26 @@ class MinecraftApiService {
     }
   }
 
-  /* 2D Full Body Render URL (mc-heads.net) */
-  static String getSkinRenderUrl(String uuid) {
-    // mc-heads.net/body/{uuid} automatically handles dashes
-    return '$mcHeadsBase/body/$uuid/250';
+  /* Renders & Icons */
+  static String getSkinRenderUrl(String uuid, {bool back = false}) {
+    return '$mcHeadsBase/${back ? 'back' : 'body'}/$uuid/250';
   }
 
-  /* Avatar URL (mc-heads.net backup) */
   static String getAvatarUrl(String uuid) {
     return '$mcHeadsBase/avatar/$uuid/100';
   }
+
+  static String getCapeUrl(String uuid) {
+    return '$mcHeadsBase/cape/$uuid';
+  }
+
+  // Common Cape Textures (Placeholders for Cosmetic Explorer)
+  static const Map<String, String> commonCapes = {
+    'Migrator': 'https://textures.minecraft.net/texture/2b3096abc9bc5392d476e338c3ed7095c5240a25697a548c7755b68df7e5971',
+    'Minecon 2011': 'https://textures.minecraft.net/texture/95d6881cd095ea60657755970b313391d4e43fcf0964720993959e13e859781',
+    'Minecon 2012': 'https://textures.minecraft.net/texture/a2e0a68393e507797e8e50f3f2d01e45300f89816222b40742f53f315a6b07d',
+    'Minecon 2013': 'https://textures.minecraft.net/texture/153b1a0dfcbae953cce6f2913f56d6b5d95cf1a9660ad4e39aee1f17c6a9ebc',
+    'Minecon 2015': 'https://textures.minecraft.net/texture/b05865c0ee11ca7c90cc0560a8053a47963c63102a06145ca4cb6c5c0d5079e',
+    'Minecon 2016': 'https://textures.minecraft.net/texture/ba24ae3089d70238e55e0031835928e3b2024b45500e57ba541a547a469a9187',
+  };
 }
