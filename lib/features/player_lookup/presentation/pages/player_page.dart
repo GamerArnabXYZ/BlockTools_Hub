@@ -19,13 +19,14 @@ class _PlayerPageState extends State<PlayerPage> {
     final username = _controller.text.trim();
     if (username.isEmpty) return;
 
+    FocusScope.of(context).unfocus();
+
     setState(() {
       _isLoading = true;
       _playerData = null;
       _error = null;
     });
 
-    // PlayerDB use ho raha hai (CORS friendly)
     final data = await MinecraftApiService.getPlayerProfile(username);
 
     setState(() {
@@ -58,9 +59,10 @@ class _PlayerPageState extends State<PlayerPage> {
                       hintText: 'e.g. Dream',
                       filled: true,
                       fillColor: Color(0xFF1A1A1A),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                       border: OutlineInputBorder(borderRadius: BorderRadius.zero),
                     ),
+                    onSubmitted: (_) => _searchPlayer(),
                   ),
                   const SizedBox(height: 15),
                   SizedBox(
@@ -68,7 +70,7 @@ class _PlayerPageState extends State<PlayerPage> {
                     child: ElevatedButton(
                       onPressed: _isLoading ? null : _searchPlayer,
                       child: _isLoading 
-                        ? const SizedBox(height: 15, width: 15, child: CircularProgressIndicator(strokeWidth: 2)) 
+                        ? const SizedBox(height: 15, width: 15, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) 
                         : const Text('SEARCH'),
                     ),
                   ),
@@ -89,13 +91,17 @@ class _PlayerPageState extends State<PlayerPage> {
                     const SizedBox(height: 5),
                     Text('UUID: ${_playerData!['id']}', style: const TextStyle(fontSize: 9, color: Colors.white54)),
                     const SizedBox(height: 20),
-                    /* Optimized Image Loading */
+                    /* Fixed Avatar Render using mc-heads.net */
                     Image.network(
-                      _playerData!['avatar'] ?? MinecraftApiService.getAvatarUrl(_playerData!['id']),
+                      MinecraftApiService.getAvatarUrl(_playerData!['id']),
                       height: 80,
                       width: 80,
-                      cacheWidth: 160, // Memory save karne ke liye cache limit
+                      cacheWidth: 160,
                       fit: BoxFit.contain,
+                      loadingBuilder: (_, child, progress) {
+                        if (progress == null) return child;
+                        return const SizedBox(height: 80, width: 80, child: Center(child: CircularProgressIndicator(strokeWidth: 2)));
+                      },
                       errorBuilder: (_, __, ___) => const Icon(Icons.person, size: 80),
                     ),
                   ],

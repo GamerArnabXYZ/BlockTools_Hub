@@ -2,26 +2,23 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 /* 
-DEEP FIX:
-- PlayerDB.co use kiya hai kyunki ye CORS friendly hai (Web build ke liye zaroori).
-- Mojang API direct web se kaam nahi karta (CORS error).
+FIX:
+- Skin Viewer ke liye mc-heads.net use kiya hai (CORS friendly aur fast).
+- PlayerDB se player data fetch ho raha hai.
 */
 class MinecraftApiService {
-  // PlayerDB is great for Web + Android
   static const String playerDbBase = 'https://playerdb.co/api/player/minecraft';
-  // Server Status API (CORS friendly)
   static const String serverBase = 'https://api.mcsrvstat.us/2';
-  // Crafatar remains good for renders
-  static const String crafatarBase = 'https://crafatar.com';
+  // mc-heads.net is very reliable for renders on web
+  static const String mcHeadsBase = 'https://mc-heads.net';
 
-  /* PlayerDB se player data fetch karna */
+  /* Player data fetch karna */
   static Future<Map<String, dynamic>?> getPlayerProfile(String identifier) async {
     try {
       final response = await http.get(Uri.parse('$playerDbBase/$identifier'));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['success'] == true) {
-          // Data format match karne ke liye map return kar rahe hain
           final player = data['data']['player'];
           return {
             'name': player['username'],
@@ -32,7 +29,6 @@ class MinecraftApiService {
       }
       return null;
     } catch (e) {
-      print('API Error: $e');
       return null;
     }
   }
@@ -46,18 +42,18 @@ class MinecraftApiService {
       }
       return null;
     } catch (e) {
-      print('Server API Error: $e');
       return null;
     }
   }
 
-  /* 2D Skin Render URL */
+  /* 2D Full Body Render URL (mc-heads.net) */
   static String getSkinRenderUrl(String uuid) {
-    return '$crafatarBase/renders/body/$uuid?overlay=true&scale=10';
+    // mc-heads.net/body/{uuid} automatically handles dashes
+    return '$mcHeadsBase/body/$uuid/250';
   }
 
-  /* Avatar/Face URL (PlayerDB bhi deta hai, lekin Crafatar backup ke liye) */
+  /* Avatar URL (mc-heads.net backup) */
   static String getAvatarUrl(String uuid) {
-    return '$crafatarBase/avatars/$uuid?overlay=true';
+    return '$mcHeadsBase/avatar/$uuid/100';
   }
 }
