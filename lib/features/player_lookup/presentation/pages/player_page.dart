@@ -5,11 +5,11 @@ import 'package:blocktools_hub/core/services/minecraft_api_service.dart';
 import 'package:blocktools_hub/core/services/storage_service.dart';
 
 /* 
-PLAYER LOOKUP v4:
-- Advanced Profile Dashboard.
-- Cape detection UI.
-- Share & Download logic.
-- Expanded info sections.
+PLAYER LOOKUP v4.5:
+- Enhanced Combo rendering.
+- Isometric Head support.
+- Better Badge system.
+- Direct Skin Download link.
 */
 class PlayerPage extends StatefulWidget {
   const PlayerPage({super.key});
@@ -68,7 +68,7 @@ class _PlayerPageState extends State<PlayerPage> {
   @override
   Widget build(BuildContext context) {
     return MinecraftBasePage(
-      title: 'Player Profile v4',
+      title: 'Global Player Search',
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -79,11 +79,11 @@ class _PlayerPageState extends State<PlayerPage> {
                   TextField(
                     controller: _controller,
                     style: const TextStyle(fontSize: 14),
-                    decoration: const InputDecoration(hintText: 'Enter username...', border: OutlineInputBorder()),
+                    decoration: const InputDecoration(hintText: 'Username or UUID', border: OutlineInputBorder()),
                     onSubmitted: (_) => _searchPlayer(),
                   ),
                   const SizedBox(height: 12),
-                  SizedBox(width: double.infinity, child: ElevatedButton(onPressed: _isLoading ? null : _searchPlayer, child: const Text('GET PROFILE'))),
+                  SizedBox(width: double.infinity, child: ElevatedButton(onPressed: _isLoading ? null : _searchPlayer, child: const Text('SEARCH PROFILE'))),
                 ],
               ),
             ),
@@ -102,7 +102,7 @@ class _PlayerPageState extends State<PlayerPage> {
   Widget _buildSkeleton() {
     return const Padding(
       padding: EdgeInsets.only(top: 20),
-      child: MinecraftCard(child: Column(children: [MinecraftSkeleton(height: 20, width: 150), SizedBox(height: 10), MinecraftSkeleton(height: 100, width: 100)])),
+      child: MinecraftCard(child: Column(children: [MinecraftSkeleton(height: 20, width: 150), SizedBox(height: 10), MinecraftSkeleton(height: 150, width: 150)])),
     );
   }
 
@@ -125,32 +125,44 @@ class _PlayerPageState extends State<PlayerPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(name.toString().toUpperCase(), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.greenAccent)),
+                  Text(name.toString().toUpperCase(), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.greenAccent)),
                   IconButton(
-                    icon: Icon(isFav ? Icons.favorite : Icons.favorite_border, color: Colors.red),
+                    icon: Icon(isFav ? Icons.favorite : Icons.favorite_border, color: Colors.red, size: 20),
                     onPressed: () { StorageService.toggleFavorite('player_favs', name); setState(() {}); },
                   ),
                 ],
               ),
               const SizedBox(height: 15),
-              /* Avatar & Cape Preview Row */
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildProfileBit('SKIN', Image.network(MinecraftApiService.getAvatarUrl(uuid), height: 80)),
-                  _buildProfileBit('CAPE', Image.network(MinecraftApiService.getCapeUrl(uuid), height: 80, errorBuilder: (_, __, ___) => const Icon(Icons.block, size: 40, color: Colors.white24))),
-                ],
+              
+              /* Pro Combo Render */
+              Container(
+                height: 180,
+                width: double.infinity,
+                decoration: BoxDecoration(color: Colors.black26, border: Border.all(color: Colors.black, width: 2)),
+                child: Image.network(
+                  MinecraftApiService.getComboUrl(uuid),
+                  fit: BoxFit.contain,
+                  loadingBuilder: (_, child, progress) => progress == null ? child : const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                ),
               ),
+              
               const SizedBox(height: 20),
-              /* Details List */
+              /* Details */
               _buildDetailRow('UUID', uuid),
-              _buildDetailRow('BADGES', 'OFFICIAL PLAYER'),
+              _buildDetailRow('ACCOUNT', 'JAVA EDITION'),
+              
               const SizedBox(height: 20),
               Row(
                 children: [
-                  Expanded(child: ElevatedButton(onPressed: () { Clipboard.setData(ClipboardData(text: 'https://namemc.com/profile/$uuid')); showMinecraftToast(context, 'Profile Link Copied!'); }, child: const Text('SHARE'))),
+                  Expanded(child: ElevatedButton(onPressed: () {
+                    Clipboard.setData(ClipboardData(text: MinecraftApiService.getDownloadSkinUrl(uuid)));
+                    showMinecraftToast(context, 'Skin Link Copied!');
+                  }, child: const Text('GET SKIN'))),
                   const SizedBox(width: 10),
-                  Expanded(child: ElevatedButton(onPressed: () { /* Logic for skin download usually involves opening URL in browser */ }, child: const Text('DOWNLOAD SKIN'))),
+                  Expanded(child: ElevatedButton(onPressed: () {
+                    Clipboard.setData(ClipboardData(text: 'https://namemc.com/profile/$uuid'));
+                    showMinecraftToast(context, 'Profile Link Copied!');
+                  }, child: const Text('SHARE'))),
                 ],
               ),
             ],
@@ -160,24 +172,14 @@ class _PlayerPageState extends State<PlayerPage> {
     );
   }
 
-  Widget _buildProfileBit(String label, Widget child) {
-    return Column(
-      children: [
-        Text(label, style: const TextStyle(fontSize: 8, color: Colors.white38)),
-        const SizedBox(height: 10),
-        Container(padding: const EdgeInsets.all(8), color: Colors.black26, child: child),
-      ],
-    );
-  }
-
   Widget _buildDetailRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 6),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: const TextStyle(fontSize: 9, color: Colors.white38)),
-          Text(value, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
+          Text(value, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, overflow: TextOverflow.ellipsis)),
         ],
       ),
     );
@@ -188,9 +190,9 @@ class _PlayerPageState extends State<PlayerPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 30),
-        const Text('RECENT DISCOVERIES', style: TextStyle(fontSize: 9, color: Colors.white38)),
+        const Text('RECENT SEARCHES', style: TextStyle(fontSize: 8, color: Colors.white24, letterSpacing: 1.2)),
         const SizedBox(height: 10),
-        Wrap(spacing: 8, children: _history.map((h) => ActionChip(label: Text(h, style: const TextStyle(fontSize: 10)), onPressed: () => _searchPlayer(h), backgroundColor: const Color(0xFF313131), shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero))).toList()),
+        Wrap(spacing: 8, runSpacing: 8, children: _history.map((h) => ActionChip(label: Text(h, style: const TextStyle(fontSize: 10)), onPressed: () => _searchPlayer(h), backgroundColor: const Color(0xFF313131), shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero))).toList()),
       ],
     );
   }

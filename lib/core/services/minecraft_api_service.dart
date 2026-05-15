@@ -2,10 +2,10 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 /* 
-API SERVICE v4:
-- Added Server Icon helper.
-- Added Cape Render helper.
-- Improved Error handling.
+API SERVICE v4.5:
+- Fully Integrated mc-heads.net endpoints.
+- Added Isometric, Combo, and Player render support.
+- Added Skin Download and Raw Texture helpers.
 */
 class MinecraftApiService {
   static const String playerDbBase = 'https://playerdb.co/api/player/minecraft';
@@ -41,20 +41,53 @@ class MinecraftApiService {
     }
   }
 
-  /* Renders & Icons */
-  static String getSkinRenderUrl(String uuid, {bool back = false}) {
-    return '$mcHeadsBase/${back ? 'back' : 'body'}/$uuid/250';
+  /* --- Advanced mc-heads.net Helpers --- */
+
+  // Basic Avatar with helm/nohelm
+  static String getAvatarUrl(String identifier, {int size = 100, bool noHelm = false}) {
+    return '$mcHeadsBase/avatar/$identifier/$size${noHelm ? '/nohelm' : ''}.png';
   }
 
-  static String getAvatarUrl(String uuid) {
-    return '$mcHeadsBase/avatar/$uuid/100';
+  // Isometric Head
+  static String getHeadUrl(String identifier, {int size = 100, String direction = ''}) {
+    // direction can be 'left' or 'right'
+    String url = '$mcHeadsBase/head/$identifier/$size';
+    if (direction.isNotEmpty) url += '/$direction';
+    return url;
+  }
+
+  // Isometric Body
+  static String getBodyUrl(String identifier, {int size = 250, String direction = ''}) {
+    String url = '$mcHeadsBase/body/$identifier/$size';
+    if (direction.isNotEmpty) url += '/$direction';
+    return url;
+  }
+
+  // Full Body 3D-like Render
+  static String getPlayerRenderUrl(String identifier, {int size = 250}) {
+    return '$mcHeadsBase/player/$identifier/$size';
+  }
+
+  // Combo (Head + Body)
+  static String getComboUrl(String identifier, {int size = 250}) {
+    return '$mcHeadsBase/combo/$identifier/$size';
+  }
+
+  // Raw Skin Texture
+  static String getSkinTextureUrl(String identifier) {
+    return '$mcHeadsBase/skin/$identifier';
+  }
+
+  // Download Skin URL
+  static String getDownloadSkinUrl(String identifier) {
+    return '$mcHeadsBase/download/$identifier';
   }
 
   static String getCapeUrl(String uuid) {
     return '$mcHeadsBase/cape/$uuid';
   }
 
-  // Common Cape Textures (Placeholders for Cosmetic Explorer)
+  // Common Cape Textures
   static const Map<String, String> commonCapes = {
     'Migrator': 'https://textures.minecraft.net/texture/2b3096abc9bc5392d476e338c3ed7095c5240a25697a548c7755b68df7e5971',
     'Minecon 2011': 'https://textures.minecraft.net/texture/95d6881cd095ea60657755970b313391d4e43fcf0964720993959e13e859781',
