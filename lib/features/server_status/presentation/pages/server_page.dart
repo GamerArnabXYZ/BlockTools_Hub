@@ -6,10 +6,10 @@ import 'package:blocktools_hub/core/services/minecraft_api_service.dart';
 import 'package:blocktools_hub/core/services/storage_service.dart';
 
 /* 
-SERVER BROWSER v4.8:
-- Auto-Detection Logic: Java aur Bedrock dono ko parallel check karta hai.
-- Toggle hata diya gaya hai taaki user experience seamless ho.
-- Agar server cross-play support karta hai, toh dono results stack honge.
+SERVER BROWSER v4.9:
+- Comprehensive Intel Restoration: Added back all technical fields.
+- Deep JSON parsing for DNS/SRV and Software info.
+- Dynamic layout for Dual-Edition detection.
 */
 class ServerPage extends StatefulWidget {
   const ServerPage({super.key});
@@ -51,7 +51,6 @@ class _ServerPageState extends State<ServerPage> {
       _error = null; 
     });
 
-    // Parallel calls for speed
     try {
       final results = await Future.wait([
         MinecraftApiService.getServerStatus(serverIp, bedrock: false),
@@ -64,14 +63,13 @@ class _ServerPageState extends State<ServerPage> {
           _javaData = results[0];
           _bedrockData = results[1];
 
-          // Check if at least one is "online" effectively
           bool anyOnline = (_javaData != null && _javaData!['online'] == true) || 
                            (_bedrockData != null && _bedrockData!['online'] == true);
 
           if (anyOnline) {
             StorageService.addHistory('server_history', serverIp);
           } else if (_javaData == null && _bedrockData == null) {
-            _error = "Server lookup failed. Check IP.";
+            _error = "Server lookup failed.";
           }
         });
       }
@@ -114,14 +112,14 @@ class _ServerPageState extends State<ServerPage> {
             if (_isLoading) _buildSkeleton(),
             if (_error != null) _buildError(),
             
-            /* Results Logic */
+            /* Java Result */
             if (_javaData != null && _javaData!['online'] == true) 
-              _buildResultCard(_javaData!, 'JAVA EDITION', Colors.blueAccent),
+              _buildDetailedResult(_javaData!, 'JAVA EDITION', Colors.blueAccent),
             
+            /* Bedrock Result */
             if (_bedrockData != null && _bedrockData!['online'] == true) 
-              _buildResultCard(_bedrockData!, 'BEDROCK EDITION', Colors.greenAccent),
+              _buildDetailedResult(_bedrockData!, 'BEDROCK EDITION', Colors.greenAccent),
             
-            // Offline Fallback (Donon offline hain tabhi dikhayenge)
             if (!_isLoading && _javaData != null && _javaData!['online'] == false && 
                 _bedrockData != null && _bedrockData!['online'] == false)
               _buildOfflineCard(),
@@ -133,7 +131,7 @@ class _ServerPageState extends State<ServerPage> {
     );
   }
 
-  Widget _buildResultCard(Map<String, dynamic> data, String edition, Color accent) {
+  Widget _buildDetailedResult(Map<String, dynamic> data, String edition, Color accent) {
     final ip = _controller.text;
     final isFav = _favServers.contains(ip);
     final isBedrock = edition.contains('BEDROCK');
@@ -143,7 +141,9 @@ class _ServerPageState extends State<ServerPage> {
       child: MinecraftCard(
         color: const Color(0xFF1A1A1A),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            /* Header */
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -158,40 +158,74 @@ class _ServerPageState extends State<ServerPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 15),
+            
+            const SizedBox(height: 10),
+            /* Main Info Row */
             Row(
               children: [
                 if (data['icon'] != null)
-                   Container(height: 40, width: 40, margin: const EdgeInsets.only(right: 15), decoration: BoxDecoration(border: Border.all(color: Colors.black, width: 2)), child: Image.memory(base64Decode(data['icon'].split(',').last), fit: BoxFit.cover)),
+                   Container(height: 50, width: 50, margin: const EdgeInsets.only(right: 15), decoration: BoxDecoration(border: Border.all(color: Colors.black, width: 2)), child: Image.memory(base64Decode(data['icon'].split(',').last), fit: BoxFit.cover)),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('${data['players']['online']} / ${data['players']['max']} PLAYERS', style: const TextStyle(fontSize: 14, color: Colors.white, fontWeight: FontWeight.bold)),
-                      Text('VERSION: ${data['version'] ?? 'N/A'}', style: const TextStyle(fontSize: 9, color: Colors.white38)),
+                      Text('${data['players']['online']} / ${data['players']['max']} PLAYERS', style: const TextStyle(fontSize: 15, color: Colors.greenAccent, fontWeight: FontWeight.bold)),
+                      Text(data['version'] ?? 'N/A', style: const TextStyle(fontSize: 10, color: Colors.white70)),
                     ],
                   ),
                 ),
               ],
             ),
+
             const SizedBox(height: 15),
             /* MOTD */
             if (data['motd'] != null && data['motd']['clean'] != null)
-              Container(width: double.infinity, padding: const EdgeInsets.all(8), color: Colors.black45, child: Text(data['motd']['clean'].join('\n').trim(), textAlign: TextAlign.center, style: const TextStyle(fontSize: 9, color: Colors.white70))),
+              Container(width: double.infinity, padding: const EdgeInsets.all(10), color: Colors.black45, child: Text(data['motd']['clean'].join('\n').trim(), textAlign: TextAlign.center, style: const TextStyle(fontSize: 10, color: Colors.white70))),
             
-            const SizedBox(height: 15),
-            _buildInfoRow('PORT', data['port'].toString()),
-            _buildInfoRow('SOFTWARE', data['software'] ?? 'Unknown'),
+            const SizedBox(height: 20),
+            
+            /* TECHNICAL SPECS SECTION */
+            _buildSectionTitle('TECHNICAL SPECS'),
+            _buildInfoRow('SOFTWARE', data['software'] ?? 'Vanilla/Unknown'),
+            _buildInfoRow('PROTOCOL', data['protocol'] != null ? '${data['protocol']['version']} (${data['protocol']['name'] ?? ''})' : 'N/A'),
             if (isBedrock) ...[
               _buildInfoRow('MAP', data['map']?['clean'] ?? 'N/A'),
               _buildInfoRow('GAMEMODE', data['gamemode'] ?? 'N/A'),
             ],
+            if (!isBedrock) _buildInfoRow('EULA BLOCKED', data['eula_blocked'] == true ? 'YES' : 'NO'),
+
             const SizedBox(height: 15),
-            ElevatedButton(onPressed: () { Clipboard.setData(ClipboardData(text: ip)); showMinecraftToast(context, 'IP Copied!'); }, child: const Text('COPY IP')),
+
+            /* NETWORK INTEL SECTION */
+            _buildSectionTitle('NETWORK INTEL'),
+            _buildInfoRow('NUMERIC IP', data['ip'] ?? 'N/A'),
+            _buildInfoRow('PORT', data['port'].toString()),
+            _buildInfoRow('HOSTNAME', data['hostname'] ?? 'N/A'),
+            
+            /* SRV / DNS Details from Debug */
+            if (data['debug']?['dns']?['srv'] != null && data['debug']['dns']['srv'].isNotEmpty)
+               _buildInfoRow('SRV TARGET', data['debug']['dns']['srv'][0]['target'] ?? 'N/A'),
+            
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(child: ElevatedButton(onPressed: () { Clipboard.setData(ClipboardData(text: ip)); showMinecraftToast(context, 'Address Copied!'); }, child: const Text('COPY ADDRESS'))),
+                const SizedBox(width: 10),
+                Expanded(child: ElevatedButton(onPressed: () { /* Logic for full JSON export or Share */ }, child: const Text('SHARE INTEL'))),
+              ],
+            ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(title, style: const TextStyle(fontSize: 8, color: Colors.blueAccent, fontWeight: FontWeight.bold, letterSpacing: 1.2)));
+  }
+
+  Widget _buildInfoRow(String label, String val) {
+    return Padding(padding: const EdgeInsets.only(bottom: 6), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label, style: const TextStyle(fontSize: 8, color: Colors.white38)), Expanded(child: Text(val, textAlign: TextAlign.right, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis))]));
   }
 
   Widget _buildOfflineCard() {
@@ -204,12 +238,8 @@ class _ServerPageState extends State<ServerPage> {
     );
   }
 
-  Widget _buildInfoRow(String label, String val) {
-    return Padding(padding: const EdgeInsets.only(bottom: 5), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label, style: const TextStyle(fontSize: 8, color: Colors.white38)), Text(val, style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold))]));
-  }
-
   Widget _buildSkeleton() {
-    return const Padding(padding: EdgeInsets.only(top: 20), child: MinecraftCard(child: Column(children: [MinecraftSkeleton(height: 15, width: 100), SizedBox(height: 15), MinecraftSkeleton(height: 60, width: double.infinity)])));
+    return const Padding(padding: EdgeInsets.only(top: 20), child: MinecraftCard(child: Column(children: [MinecraftSkeleton(height: 15, width: 100), SizedBox(height: 15), MinecraftSkeleton(height: 80, width: double.infinity)])));
   }
 
   Widget _buildError() {
