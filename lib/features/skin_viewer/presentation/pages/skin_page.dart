@@ -39,7 +39,8 @@ class _SkinPageState extends State<SkinPage> {
     if (username.isEmpty) return;
     FocusScope.of(context).unfocus();
     setState(() { _isLoading = true; _uuid = null; });
-    final data = await MinecraftApiService.getPlayerProfile(username);
+    // 'java' edition default set kiya hai
+    final data = await MinecraftApiService.getPlayerProfile(username, 'java');
     setState(() {
       _isLoading = false;
       if (data != null) { _uuid = data['id']; }
