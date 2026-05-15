@@ -6,11 +6,10 @@ import 'package:blocktools_hub/core/services/minecraft_api_service.dart';
 import 'package:blocktools_hub/core/services/storage_service.dart';
 
 /* 
-SERVER BROWSER v4.6:
-- mcsrvstat.us v3 Support.
-- Java & Bedrock switch.
-- Detailed MOTD & Icon rendering.
-- Favorites system integration.
+SERVER BROWSER v4.7:
+- Advanced Metrics (Software, Port, Map, Gamemode).
+- DNS/SRV Details.
+- EULA & Version tracking.
 */
 class ServerPage extends StatefulWidget {
   const ServerPage({super.key});
@@ -54,7 +53,7 @@ class _ServerPageState extends State<ServerPage> {
           _serverData = data;
           StorageService.addHistory('server_history', serverIp);
         } else { 
-          _error = "Server lookup failed. Check IP/Edition."; 
+          _error = "Server lookup failed."; 
         }
       });
     }
@@ -63,19 +62,18 @@ class _ServerPageState extends State<ServerPage> {
   @override
   Widget build(BuildContext context) {
     return MinecraftBasePage(
-      title: 'Global Server Browser',
+      title: 'Advanced Server Intel',
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            /* Search Card with Edition Toggle */
             MinecraftCard(
               child: Column(
                 children: [
                   TextField(
                     controller: _controller,
                     decoration: InputDecoration(
-                      hintText: _isBedrock ? 'Bedrock IP (e.g. play.br.net)' : 'Java IP (e.g. hypixel.net)',
+                      hintText: _isBedrock ? 'play.br-server.net' : 'play.hypixel.net',
                       border: const OutlineInputBorder(),
                     ),
                     onSubmitted: (_) => _checkServer(),
@@ -90,7 +88,7 @@ class _ServerPageState extends State<ServerPage> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  SizedBox(width: double.infinity, child: ElevatedButton(onPressed: _isLoading ? null : _checkServer, child: const Text('CHECK SERVER'))),
+                  SizedBox(width: double.infinity, child: ElevatedButton(onPressed: _isLoading ? null : _checkServer, child: const Text('GET FULL INTEL'))),
                 ],
               ),
             ),
@@ -121,7 +119,7 @@ class _ServerPageState extends State<ServerPage> {
   }
 
   Widget _buildSkeleton() {
-    return const Padding(padding: EdgeInsets.only(top: 20), child: MinecraftCard(child: Column(children: [MinecraftSkeleton(height: 15, width: 100), SizedBox(height: 15), MinecraftSkeleton(height: 60, width: double.infinity)])));
+    return const Padding(padding: EdgeInsets.only(top: 20), child: MinecraftCard(child: Column(children: [MinecraftSkeleton(height: 15, width: 100), SizedBox(height: 15), MinecraftSkeleton(height: 80, width: double.infinity)])));
   }
 
   Widget _buildError() {
@@ -146,7 +144,7 @@ class _ServerPageState extends State<ServerPage> {
                   Row(children: [
                     Container(width: 8, height: 8, decoration: BoxDecoration(shape: BoxShape.circle, color: online ? Colors.green : Colors.red)),
                     const SizedBox(width: 8),
-                    Text(online ? 'SERVER ONLINE' : 'SERVER OFFLINE', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                    Text(online ? 'ONLINE' : 'OFFLINE', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
                   ]),
                   IconButton(
                     icon: Icon(isFav ? Icons.star : Icons.star_border, color: Colors.amber, size: 20),
@@ -156,12 +154,22 @@ class _ServerPageState extends State<ServerPage> {
               ),
               if (online) ...[
                 const SizedBox(height: 15),
-                /* Server Icon (Java only usually) */
-                if (_serverData!['icon'] != null)
-                   Container(height: 64, width: 64, decoration: BoxDecoration(border: Border.all(color: Colors.black, width: 2)), child: Image.memory(base64Decode(_serverData!['icon'].split(',').last), fit: BoxFit.cover)),
-                
-                const SizedBox(height: 15),
-                Text('${_serverData!['players']['online']} / ${_serverData!['players']['max']} PLAYERS', style: const TextStyle(fontSize: 15, color: Colors.greenAccent, fontWeight: FontWeight.bold)),
+                /* Server Icon & Main Stats */
+                Row(
+                  children: [
+                    if (_serverData!['icon'] != null)
+                       Container(height: 50, width: 50, margin: const EdgeInsets.only(right: 15), decoration: BoxDecoration(border: Border.all(color: Colors.black, width: 2)), child: Image.memory(base64Decode(_serverData!['icon'].split(',').last), fit: BoxFit.cover)),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('${_serverData!['players']['online']} / ${_serverData!['players']['max']} PLAYERS', style: const TextStyle(fontSize: 14, color: Colors.greenAccent, fontWeight: FontWeight.bold)),
+                          Text('PORT: ${_serverData!['port']}', style: const TextStyle(fontSize: 10, color: Colors.white38)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
                 
                 const SizedBox(height: 15),
                 /* MOTD Render */
@@ -173,18 +181,27 @@ class _ServerPageState extends State<ServerPage> {
                     child: Text(_serverData!['motd']['clean'].join('\n').trim(), textAlign: TextAlign.center, style: const TextStyle(fontSize: 10, color: Colors.white70)),
                   ),
                 
-                const SizedBox(height: 15),
-                _buildInfoRow('VERSION', _serverData!['version'] ?? 'Unknown'),
-                _buildInfoRow('PROTOCOL', _serverData!['protocol'] != null ? _serverData!['protocol']['version'].toString() : 'N/A'),
-                
                 const SizedBox(height: 20),
-                Row(
-                  children: [
-                    Expanded(child: ElevatedButton(onPressed: () { Clipboard.setData(ClipboardData(text: ip)); showMinecraftToast(context, 'IP Copied!'); }, child: const Text('COPY IP'))),
-                    const SizedBox(width: 10),
-                    Expanded(child: ElevatedButton(onPressed: () { /* Future: share link */ }, child: const Text('SHARE'))),
-                  ],
-                ),
+                /* Technical Details Section */
+                _buildSectionTitle('SERVER INFO'),
+                _buildInfoRow('VERSION', _serverData!['version'] ?? 'N/A'),
+                _buildInfoRow('SOFTWARE', _serverData!['software'] ?? 'Vanilla/Unknown'),
+                if (_isBedrock) ...[
+                  _buildInfoRow('MAP', _serverData!['map']?['clean'] ?? 'N/A'),
+                  _buildInfoRow('GAMEMODE', _serverData!['gamemode'] ?? 'N/A'),
+                ],
+                if (!_isBedrock) _buildInfoRow('EULA BLOCKED', _serverData!['eula_blocked'] == true ? 'YES' : 'NO'),
+                
+                const SizedBox(height: 15),
+                /* Network Section */
+                _buildSectionTitle('NETWORK INTEL'),
+                _buildInfoRow('HOST', _serverData!['hostname'] ?? 'N/A'),
+                _buildInfoRow('IP ADDR', _serverData!['ip'] ?? 'N/A'),
+                if (_serverData!['debug']?['dns']?['srv'] != null && _serverData!['debug']['dns']['srv'].isNotEmpty)
+                   _buildInfoRow('SRV TARGET', _serverData!['debug']['dns']['srv'][0]['target'] ?? 'N/A'),
+
+                const SizedBox(height: 20),
+                ElevatedButton(onPressed: () { Clipboard.setData(ClipboardData(text: ip)); showMinecraftToast(context, 'IP Copied!'); }, child: const Text('COPY ADDRESS')),
               ],
             ],
           ),
@@ -193,8 +210,12 @@ class _ServerPageState extends State<ServerPage> {
     );
   }
 
+  Widget _buildSectionTitle(String title) {
+    return Padding(padding: const EdgeInsets.only(bottom: 8), child: Align(alignment: Alignment.centerLeft, child: Text(title, style: const TextStyle(fontSize: 8, color: Colors.blueAccent, fontWeight: FontWeight.bold, letterSpacing: 1.2))));
+  }
+
   Widget _buildInfoRow(String label, String val) {
-    return Padding(padding: const EdgeInsets.only(bottom: 6), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label, style: const TextStyle(fontSize: 8, color: Colors.white38)), Text(val, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold))]));
+    return Padding(padding: const EdgeInsets.only(bottom: 6), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label, style: const TextStyle(fontSize: 8, color: Colors.white38)), Expanded(child: Text(val, textAlign: TextAlign.right, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, overflow: TextOverflow.ellipsis)))]));
   }
 
   Widget _buildFavList() {
@@ -204,7 +225,7 @@ class _ServerPageState extends State<ServerPage> {
         const SizedBox(height: 30),
         const Text('FAVORITE SERVERS', style: TextStyle(fontSize: 8, color: Colors.white24, letterSpacing: 1.2)),
         const SizedBox(height: 10),
-        ..._favServers.map((s) => Padding(padding: const EdgeInsets.only(bottom: 8), child: MinecraftCard(onTap: () => _checkServer(s), padding: 10, child: Row(children: [const Icon(Icons.dns, color: Colors.blueAccent, size: 14), const SizedBox(width: 12), Text(s, style: const TextStyle(fontSize: 12))])))),
+        ..._favServers.map((s) => Padding(padding: const EdgeInsets.only(bottom: 8), child: MinecraftCard(onTap: () => _checkServer(s), padding: 10, child: Row(children: [const Icon(Icons.dns, color: Colors.blueAccent, size: 14), const SizedBox(width: 12), Text(s, style: const TextStyle(fontSize: 11))])))),
       ],
     );
   }
