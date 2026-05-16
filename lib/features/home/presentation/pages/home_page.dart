@@ -4,10 +4,10 @@ import 'package:blocktools_hub/shared/widgets/minecraft_widgets.dart';
 import 'package:blocktools_hub/core/services/storage_service.dart';
 
 /* 
-DASHBOARD v6:
-- Redesigned for "Mobile App" feel.
-- Modern layout with animated sections.
-- Quick summary cards.
+NATIVE DASHBOARD v7:
+- Material 3 Content structure.
+- Activity feed style.
+- Enhanced Typography.
 */
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -38,98 +38,96 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return MinecraftBasePage(
-      title: 'Dashboard',
-      body: CustomScrollView(
-        slivers: [
-          /* Header Banner */
-          SliverToBoxAdapter(
-            child: Container(
-              height: 180,
-              padding: const EdgeInsets.all(24),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFF2E7D32), Color(0xFF1B5E20)],
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  const Text('HELLO, EXPLORER', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: 2)),
-                  const Text('BlockTools Hub is ready.', style: TextStyle(fontSize: 12, color: Colors.white70)),
-                ],
-              ),
-            ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.1),
+      title: 'Platform Hub',
+      body: ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        children: [
+          const SizedBox(height: 10),
+          /* Welcome Card */
+          _buildWelcomeCard(),
+          const SizedBox(height: 24),
+          
+          /* Analytics Section */
+          _buildSectionHeader('YOUR ANALYTICS'),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(child: _buildMetricCard('Activities', _searchCount.toString(), Icons.history_edu, Colors.blueAccent)),
+              const SizedBox(width: 16),
+              Expanded(child: _buildMetricCard('Watchlist', _favCount.toString(), Icons.star_outline, Colors.amberAccent)),
+            ],
           ),
+          const SizedBox(height: 24),
 
-          /* Stats Grid */
-          SliverPadding(
-            padding: const EdgeInsets.all(16),
-            sliver: SliverGrid.count(
-              crossAxisCount: 2,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 1.5,
-              children: [
-                _buildStatCard('ACTIVITIES', _searchCount.toString(), Icons.history, Colors.blue),
-                _buildStatCard('FAVORITES', _favCount.toString(), Icons.favorite, Colors.red),
-              ],
-            ),
-          ),
-
-          /* News/Updates Section (Mock) */
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('PLATFORM UPDATES', style: TextStyle(fontSize: 10, color: Colors.white38, fontWeight: FontWeight.bold, letterSpacing: 2)),
-                  const SizedBox(height: 12),
-                  _buildUpdateItem('v6.0: Native Mobile Overhaul', 'New bottom navigation and animated dashboard.'),
-                  _buildUpdateItem('v5.1: API Performance Fix', 'Optimized mc-api.io integration with fallback.'),
-                ],
-              ),
-            ),
-          ),
+          /* Feature Highlights */
+          _buildSectionHeader('RECOMMENDED'),
+          const SizedBox(height: 12),
+          _buildPromoCard('Skin Studio 4.5', 'Professional isometric renders are now active.', Icons.auto_fix_high, Colors.purpleAccent),
+          _buildPromoCard('Server Intel v3', 'Java & Bedrock auto-detection support.', Icons.lan, Colors.greenAccent),
+          
+          const SizedBox(height: 100), // Bottom nav space
         ],
       ),
     );
   }
 
-  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
+  Widget _buildWelcomeCard() {
     return MinecraftCard(
-      padding: 16,
+      color: Colors.green.shade900.withOpacity(0.2),
+      padding: 24,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: color, size: 18),
+          const Text('SYSTEMS ONLINE', style: TextStyle(fontSize: 10, color: Colors.greenAccent, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
           const SizedBox(height: 8),
-          Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-          Text(label, style: const TextStyle(fontSize: 8, color: Colors.white38)),
+          const Text('Welcome to BlockTools', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
+          const Text('The ultimate Minecraft companion platform.', style: TextStyle(fontSize: 13, color: Colors.white54)),
         ],
       ),
-    ).animate().scale(delay: 200.ms);
+    ).animate().fadeIn().slideX(begin: -0.1);
   }
 
-  Widget _buildUpdateItem(String title, String desc) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
-        border: Border.all(color: Colors.white10),
-      ),
+  Widget _buildSectionHeader(String title) {
+    return Text(title, style: const TextStyle(fontSize: 11, color: Colors.white38, fontWeight: FontWeight.bold, letterSpacing: 2));
+  }
+
+  Widget _buildMetricCard(String label, String value, IconData icon, Color color) {
+    return MinecraftCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.greenAccent)),
-          const SizedBox(height: 4),
-          Text(desc, style: const TextStyle(fontSize: 10, color: Colors.white60)),
+          Icon(icon, color: color, size: 20),
+          const SizedBox(height: 12),
+          Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+          Text(label, style: const TextStyle(fontSize: 10, color: Colors.white38)),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPromoCard(String title, String desc, IconData icon, Color color) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: MinecraftCard(
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+              child: Icon(icon, color: color, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                  Text(desc, style: const TextStyle(fontSize: 11, color: Colors.white54)),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

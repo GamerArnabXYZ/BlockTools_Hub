@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 /* 
-MINECRAFT UI SYSTEM - v6 MOBILE OVERHAUL:
-- Improved spacing for mobile thumb access.
-- Standard mobile app patterns (AppBar consistency).
-- Refresh support.
+UI v7: MODERN NATIVE WIDGETS
+- Material 3 NavigationBar.
+- Floating design.
+- Animated state switches.
 */
 
 class MinecraftCard extends StatelessWidget {
@@ -23,25 +23,26 @@ class MinecraftCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.zero,
-        child: Container(
-          decoration: BoxDecoration(
-            color: color ?? const Color(0xFF313131),
-            border: Border.all(color: const Color(0xFF000000), width: 1.5),
-            boxShadow: const [
-              BoxShadow(
-                color: Colors.black45,
-                offset: Offset(2, 2),
-                blurRadius: 0,
-              )
-            ],
-          ),
+    return Container(
+      decoration: BoxDecoration(
+        color: color ?? const Color(0xFF1A1A1A),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.05), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: EdgeInsets.all(padding ?? 12.0),
+            padding: EdgeInsets.all(padding ?? 16.0),
             child: child,
           ),
         ),
@@ -55,6 +56,7 @@ class MinecraftBasePage extends StatelessWidget {
   final Widget body;
   final List<Widget>? actions;
   final Future<void> Function()? onRefresh;
+  final bool isSliver;
 
   const MinecraftBasePage({
     super.key,
@@ -62,35 +64,28 @@ class MinecraftBasePage extends StatelessWidget {
     required this.body,
     this.actions,
     this.onRefresh,
+    this.isSliver = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    Widget content = Scaffold(
-      backgroundColor: const Color(0xFF121212), // Deeper dark for native feel
-      appBar: AppBar(
-        title: Text(title.toUpperCase(), 
-          style: const TextStyle(fontSize: 13, letterSpacing: 1.2, fontWeight: FontWeight.w900)),
-        backgroundColor: const Color(0xFF101010),
-        elevation: 0,
-        centerTitle: false, // Align left for Android style
-        actions: actions,
-      ),
-      body: RepaintBoundary(
-        child: body,
+    return Scaffold(
+      body: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) => [
+          SliverAppBar.large(
+            title: Text(title.toUpperCase(), 
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+            actions: actions,
+            floating: true,
+            pinned: true,
+            snap: true,
+          ),
+        ],
+        body: onRefresh != null
+            ? RefreshIndicator(onRefresh: onRefresh!, child: body)
+            : body,
       ),
     );
-
-    if (onRefresh != null) {
-      content = RefreshIndicator(
-        onRefresh: onRefresh!,
-        backgroundColor: const Color(0xFF313131),
-        color: Colors.greenAccent,
-        child: content,
-      );
-    }
-
-    return content;
   }
 }
 
@@ -107,7 +102,7 @@ class MinecraftSkeleton extends StatelessWidget {
       width: width,
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.05),
-        border: Border.all(color: Colors.black, width: 1),
+        borderRadius: BorderRadius.circular(8),
       ),
     );
   }
@@ -118,12 +113,11 @@ void showMinecraftToast(BuildContext context, String message) {
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
       content: Text(message.toUpperCase(), 
-        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+        style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
       backgroundColor: const Color(0xFF2E7D32),
       behavior: SnackBarBehavior.floating,
-      duration: const Duration(seconds: 2),
-      margin: const EdgeInsets.all(20),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), // Rounded toast
+      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     ),
   );
 }
