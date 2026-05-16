@@ -12,6 +12,8 @@ dependencies:
   cupertino_icons: ^1.0.2
   http: ^1.1.0 # API calls ke liye add kiya gaya hai
   shared_preferences: ^2.2.2 # Local data storage ke liye add kiya gaya hai
+  flutter_animate: ^4.5.0 # Cool animations ke liye add kiya hai
+
 
 
 

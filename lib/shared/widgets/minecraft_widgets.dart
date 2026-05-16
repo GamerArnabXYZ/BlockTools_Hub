@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 /* 
-MINECRAFT UI SYSTEM - v3 POLISH:
-- Added Loading Skeletons.
-- Added Minecraft-style Toast.
-- Improved spacing and borders.
+MINECRAFT UI SYSTEM - v6 MOBILE OVERHAUL:
+- Improved spacing for mobile thumb access.
+- Standard mobile app patterns (AppBar consistency).
+- Refresh support.
 */
 
 class MinecraftCard extends StatelessWidget {
@@ -23,23 +23,27 @@ class MinecraftCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: color ?? const Color(0xFF313131),
-          border: Border.all(color: const Color(0xFF000000), width: 2),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black26,
-              offset: Offset(4, 4),
-              blurRadius: 0,
-            )
-          ],
-        ),
-        child: Padding(
-          padding: EdgeInsets.all(padding ?? 12.0),
-          child: child,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.zero,
+        child: Container(
+          decoration: BoxDecoration(
+            color: color ?? const Color(0xFF313131),
+            border: Border.all(color: const Color(0xFF000000), width: 1.5),
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black45,
+                offset: Offset(2, 2),
+                blurRadius: 0,
+              )
+            ],
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(padding ?? 12.0),
+            child: child,
+          ),
         ),
       ),
     );
@@ -50,34 +54,46 @@ class MinecraftBasePage extends StatelessWidget {
   final String title;
   final Widget body;
   final List<Widget>? actions;
+  final Future<void> Function()? onRefresh;
 
   const MinecraftBasePage({
     super.key,
     required this.title,
     required this.body,
     this.actions,
+    this.onRefresh,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF1E1E1E),
+    Widget content = Scaffold(
+      backgroundColor: const Color(0xFF121212), // Deeper dark for native feel
       appBar: AppBar(
         title: Text(title.toUpperCase(), 
-          style: const TextStyle(fontSize: 14, letterSpacing: 1.5, fontWeight: FontWeight.bold)),
+          style: const TextStyle(fontSize: 13, letterSpacing: 1.2, fontWeight: FontWeight.w900)),
         backgroundColor: const Color(0xFF101010),
         elevation: 0,
-        centerTitle: true,
+        centerTitle: false, // Align left for Android style
         actions: actions,
       ),
       body: RepaintBoundary(
         child: body,
       ),
     );
+
+    if (onRefresh != null) {
+      content = RefreshIndicator(
+        onRefresh: onRefresh!,
+        backgroundColor: const Color(0xFF313131),
+        color: Colors.greenAccent,
+        child: content,
+      );
+    }
+
+    return content;
   }
 }
 
-/* Skeleton loader for smoother transitions */
 class MinecraftSkeleton extends StatelessWidget {
   final double height;
   final double width;
@@ -90,23 +106,24 @@ class MinecraftSkeleton extends StatelessWidget {
       height: height,
       width: width,
       decoration: BoxDecoration(
-        color: Colors.white10,
-        border: Border.all(color: Colors.black, width: 2),
+        color: Colors.white.withOpacity(0.05),
+        border: Border.all(color: Colors.black, width: 1),
       ),
     );
   }
 }
 
-/* Simple Feedback Toast */
 void showMinecraftToast(BuildContext context, String message) {
+  ScaffoldMessenger.of(context).clearSnackBars();
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
       content: Text(message.toUpperCase(), 
-        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
-      backgroundColor: const Color(0xFF3C8527),
+        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+      backgroundColor: const Color(0xFF2E7D32),
       behavior: SnackBarBehavior.floating,
       duration: const Duration(seconds: 2),
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+      margin: const EdgeInsets.all(20),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), // Rounded toast
     ),
   );
 }
